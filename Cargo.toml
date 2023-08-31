@@ -1,0 +1,20 @@
+[package]
+name = "mailstorm"
+version = "0.1.0"
+authors = ["Bruno Thomas <bthomas@iroco.fr>"]
+license = "MIT"
+description = "Mail injector to generate SMTP/IMAP traffic"
+repository = "https://github.com/iroco-co/mailstorm"
+keywords = ["mail", "smtp", "imap", "hyper"]
+categories = ["network-programming", "mail-programming"]
+readme = "README.md"
+edition = "2018"
+
+
+[dependencies]
+env_logger = "0.10.0"
+log = "0.4.14"
+structopt = "0.3.26"
+threadpool = "1.0"
+mail-send = "0.4.0"
+mail-parser = "0.8.2"
