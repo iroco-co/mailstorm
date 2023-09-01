@@ -1,59 +1,90 @@
+mod pace_setter;
+mod mail_sender;
+
 #[macro_use]
 extern crate log;
 
 use structopt::StructOpt;
 use std::io::Write;
+use async_channel::{Sender, Receiver, unbounded};
+use mail_parser::Message;
+use crate::mail_sender::MailSender;
+use crate::pace_setter::PaceSetter;
+
+static MAIL_USERS: [(&str, &str); 2]  = [("user1", "mdp1"), ("user2", "mdp2")];
 
 /// Mail injector to generate SMTP/IMAP load to a mail platform.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "mailstorm")]
 struct Args {
-    /// smtp uri
-    smtp_uri: String,
-    /// imap_uri 
-    imap_uri: Option<String>,
+    /// host of the SMTP server.
+    smtp_host: String,
+    /// host of the IMAP server.
+    imap_host: Option<String>,
     #[structopt(long)]
-    /// average pace of injection in second for each worker. Default to 1s.
-    worker_pace: Option<u8>,
+    /// directory where the mails are going to be read. Default to './mails'
+    mail_dir: Option<String>,
     #[structopt(long)]
-    /// number of workers. Default to 1.
+    /// average pace of injection in second for pace setter. Default to 1s.
+    pace_seconds: Option<u8>,
+    #[structopt(long)]
+    /// number of workers. Default to nb users.
     worker_nb: Option<u8>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MailstormConfig {
-    pub smtp_uri: String,
-    pub imap_uri: String,
+    pub smtp_host: String,
+    pub imap_host: String,
+    pub mail_dir: String,
     pub worker_nb: u8,
-    pub worker_pace: u8
+    pub pace_seconds: u8
 }
 
 impl Args {
     fn to_config(self) -> MailstormConfig {
         MailstormConfig {
-            smtp_uri: self.smtp_uri,
-            imap_uri: match self.imap_uri {
-                Some(imap_uri) => imap_uri,
+            smtp_host: self.smtp_host,
+            imap_host: match self.imap_host {
+                Some(imap_host) => imap_host,
                 None => String::new()
+            },
+            mail_dir: match self.mail_dir {
+                Some(mail_dir) => mail_dir,
+                None => "./mails".to_string()
             },
             worker_nb: match self.worker_nb {
                 Some(worker_nb) => worker_nb, 
                 None => 1 
             },
-            worker_pace: match self.worker_pace {
-                Some(worker_pace) => worker_pace,
+            pace_seconds: match self.pace_seconds {
+                Some(pace_seconds) => pace_seconds,
                 None => 1
             },
         }
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     init_logs();
     let opt = Args::from_args();
-
     let config = opt.to_config();
-    info!("Running mailstorm with SMTP url={:?} and {:?} worker(s)", config.smtp_uri, config.worker_nb);
+    info!("Running mailstorm with SMTP host={:?} and {:?} worker(s)", config.smtp_host, MAIL_USERS.len());
+    let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
+
+    let mut pace_setter = PaceSetter::new(sx.clone(), config.mail_dir, config.pace_seconds);
+
+    for user in MAIL_USERS {
+        let mut mail_sender = MailSender::new(rx.clone(),
+                                              config.smtp_host.clone(),
+                                              user.0.to_string(), user.1.to_string()).await;
+        tokio::task::spawn(async move {
+            mail_sender.run_loop().await
+        });
+    }
+    pace_setter.load_messages();
+    pace_setter.run_loop().await;
 }
 
 fn init_logs() {

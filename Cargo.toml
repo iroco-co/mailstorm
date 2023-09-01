@@ -14,7 +14,11 @@ edition = "2018"
 [dependencies]
 env_logger = "0.10.0"
 log = "0.4.14"
+async-channel = "1.9.0"
+rand = "0.8"
 structopt = "0.3.26"
-threadpool = "1.0"
 mail-send = "0.4.0"
 mail-parser = "0.8.2"
+tokio = { version = "1.32", features = ["net", "io-util", "time", "rt", "rt-multi-thread", "macros"] }
+rustls = { version = "0.21", features = ["tls12"]}
+tokio-rustls = { version = "0.24"}
