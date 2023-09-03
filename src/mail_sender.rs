@@ -28,16 +28,24 @@ impl<'a> MailSender<'a> {
                     let mut bcc_list: Vec<String> = Self::get_recipients(&parsed_message.bcc());
                     to_list.append(&mut cc_list);
                     to_list.append(&mut bcc_list);
-                    let message = Message::new(self.user.clone(), to_list, parsed_message.raw_message);
-                    SmtpClientBuilder::new(self.smtp_host.clone(), 465)
-                        .implicit_tls(true)
-                        .credentials((self.user.clone(), self.password.clone()))
-                        .connect()
-                        .await
-                        .unwrap()
-                        .send(message)
-                        .await
-                        .unwrap();
+                    let to_list_same_domain: Vec<&String> = to_list.iter().filter(|email| {
+                        email.ends_with(Self::get_domain_name(&self.user).unwrap())
+                    }).collect();
+                    if to_list_same_domain.is_empty() {
+                        warn!("mail id {:?} recipient list is empty for domain {} not sending mail",
+                            parsed_message.message_id(), Self::get_domain_name(&self.user).unwrap());
+                    } else {
+                        let message = Message::new(self.user.clone(), to_list, parsed_message.raw_message);
+                        SmtpClientBuilder::new(self.smtp_host.clone(), 465)
+                            .implicit_tls(true)
+                            .credentials((self.user.clone(), self.password.clone()))
+                            .connect()
+                            .await
+                            .unwrap()
+                            .send(message)
+                            .await
+                            .unwrap();
+                    }
                 }
                 Err(e) => error!("received error from channel {:?}", e)
             };
