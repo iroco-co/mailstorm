@@ -3,6 +3,8 @@ use mail_parser::{HeaderValue, Message as ParsedMessage};
 use mail_send::smtp::message::Message;
 use mail_send::SmtpClientBuilder;
 
+static AROBASE: char = '\u{40}';
+
 pub struct MailSender<'a> {
     user: String,
     password: String,
@@ -48,6 +50,9 @@ impl<'a> MailSender<'a> {
             _ => Vec::new()
         }
     }
+    fn get_domain_name(email: &String) -> Option<&str> {
+        email.split_once(AROBASE).and_then(|t| Some(t.1))
+    }
 }
 
 #[cfg(test)]
@@ -86,5 +91,10 @@ mod test {
                 ])),
                vec!["bar@foo.com", "baz@foo.com", "qux@foo.com"]
             )
+    }
+    #[test]
+    fn get_domain_name() {
+        assert_eq!(MailSender::get_domain_name(&"foo@bar.com".to_string()).unwrap(), "bar.com".to_string());
+        assert_eq!(MailSender::get_domain_name(&"not_email".to_string()), None);
     }
 }
