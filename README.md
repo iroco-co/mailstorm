@@ -1,6 +1,8 @@
 # mailstorm
 
-This is an mail injector based on hyper and [Stalwart Labs](https://github.com/stalwartlabs) mail libraries.
+This is a mail injector based on hyper and [Stalwart Labs](https://github.com/stalwartlabs) mail libraries.
+
+For IMAP it's using [async_imap](https://github.com/async-email/async-imap).
 
 # How it works?
 
