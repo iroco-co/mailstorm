@@ -14,4 +14,8 @@ It sends them with an average of `worker_pace` seconds between each for each wor
 
 ## For IMAP reading
 
-To be done
+IMAP clients are run if the imap host is provided.
+
+When it is, clients are logging at launch. Then the INBOX is selected.
+
+The loop is using IMAP IDLE. Each time an email is received it is fetched. 

@@ -1,5 +1,6 @@
 mod pace_setter;
 mod mail_sender;
+mod imap_client;
 
 #[macro_use]
 extern crate log;
@@ -8,6 +9,7 @@ use structopt::StructOpt;
 use std::io::Write;
 use async_channel::{Sender, Receiver, unbounded};
 use mail_parser::Message;
+use crate::imap_client::ImapClient;
 use crate::mail_sender::MailSender;
 use crate::pace_setter::PaceSetter;
 
@@ -82,6 +84,15 @@ async fn main() {
         tokio::task::spawn(async move {
             mail_sender.run_loop().await
         });
+    }
+
+    if !config.imap_host.is_empty() {
+        for user in MAIL_USERS {
+            let mut imap_client = ImapClient::try_new(config.imap_host.as_str(), user.0, user.1).await;
+            tokio::task::spawn(async move {
+                imap_client.run_loop().await
+            });
+        }
     }
     pace_setter.load_messages();
     pace_setter.run_loop().await;

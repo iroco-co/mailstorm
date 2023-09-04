@@ -19,6 +19,8 @@ rand = "0.8"
 structopt = "0.3.26"
 mail-send = "0.4.0"
 mail-parser = "0.8.2"
-tokio = { version = "1.32", features = ["net", "io-util", "time", "rt", "rt-multi-thread", "macros"] }
+async-imap = { version = "0.9", default-features = false, features = [ "tokio", "runtime-tokio" ] }
+async-native-tls = { version = "0.5", default-features = false, features = [ "runtime-tokio" ] }
+tokio = { version = "1.32", features = ["net", "io-util", "time", "rt", "rt-multi-thread", "macros"]}
 rustls = { version = "0.21", features = ["tls12"]}
 tokio-rustls = { version = "0.24"}
