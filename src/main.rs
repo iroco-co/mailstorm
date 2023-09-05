@@ -88,9 +88,9 @@ async fn main() {
 
     if !config.imap_host.is_empty() {
         for user in MAIL_USERS {
-            let mut imap_client = ImapClient::try_new(config.imap_host.as_str(), user.0, user.1).await;
+            let mut imap_client = ImapClient::new(config.imap_host.as_str());
             tokio::task::spawn(async move {
-                imap_client.run_loop().await
+                imap_client.run_loop(user.0, user.1).await
             });
         }
     }
