@@ -20,4 +20,4 @@ IMAP clients are run if the imap host is provided.
 
 Clients are logging in at launch. Then the INBOX is selected.
 
-The loop is using IMAP IDLE. Each time an email is received it is fetched. 
+The loop is using [IMAP IDLE](https://en.wikipedia.org/wiki/IMAP_IDLE). Each time an email is received it is fetched. 
