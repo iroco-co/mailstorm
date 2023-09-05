@@ -1,4 +1,4 @@
-# mailstorm
+# mailstorm [![CircleCI](https://dl.circleci.com/status-badge/img/gh/iroco-co/mailstorm/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/iroco-co/mailstorm/tree/main)
 
 This is a mail injector based on tokio and [Stalwart Labs](https://github.com/stalwartlabs) mail libraries.
 
