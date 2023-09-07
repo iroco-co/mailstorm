@@ -1,6 +1,7 @@
 mod pace_setter;
 mod mail_sender;
 mod imap_client;
+mod errors;
 
 #[macro_use]
 extern crate log;
@@ -88,9 +89,9 @@ async fn main() {
 
     if !config.imap_host.is_empty() {
         for user in MAIL_USERS {
-            let mut imap_client = ImapClient::new(config.imap_host.as_str());
+            let mut imap_client = ImapClient::try_new(config.imap_host.as_str(), user.0, user.1).await.unwrap();
             tokio::task::spawn(async move {
-                imap_client.run_loop(user.0, user.1).await
+                imap_client.wait_for_new_messages().await
             });
         }
     }
