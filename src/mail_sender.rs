@@ -55,6 +55,7 @@ impl<'a> MailSender<'a> {
     fn get_recipients(recipient_header: &HeaderValue) -> Vec<String> {
         match recipient_header {
             HeaderValue::AddressList(list) => list.into_iter().map(|a| a.address.as_ref().unwrap().to_string()).collect(),
+            HeaderValue::Address(addr) => vec![addr.address.as_ref().unwrap().to_string()],
             _ => Vec::new()
         }
     }
@@ -76,7 +77,16 @@ mod test {
     }
 
     #[test]
-    fn get_recipients_two_recipient() {
+    fn get_recipients_one_recipient() {
+        assert_eq!(MailSender::get_recipients(
+            &HeaderValue::Address(
+                Addr::new(None, "foo@bar.com"),
+            )),
+           vec!["foo@bar.com"])
+    }
+
+   #[test]
+    fn get_recipients_two_recipients() {
         assert_eq!(MailSender::get_recipients(
             &HeaderValue::AddressList(vec![
                 Addr::new("Foo".into(), "foo@bar.com"),
