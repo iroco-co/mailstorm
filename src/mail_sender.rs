@@ -2,6 +2,7 @@ use async_channel::Receiver;
 use mail_parser::{HeaderValue, Message as ParsedMessage};
 use mail_send::smtp::message::Message;
 use mail_send::SmtpClientBuilder;
+use uuid::Uuid;
 
 static AROBASE: char = '\u{40}';
 
@@ -35,7 +36,10 @@ impl<'a> MailSender<'a> {
                         warn!("mail id {:?} recipient list is empty for domain {} not sending mail",
                             parsed_message.message_id(), Self::get_domain_name(&self.user).unwrap());
                     } else {
-                        let message = Message::new(self.user.clone(), to_list, parsed_message.raw_message);
+                        let raw_body = MailSender::replace(parsed_message.raw_message(),
+                                                       parsed_message.message_id().unwrap().as_bytes(),
+                                                       Uuid::new_v4().to_string().as_bytes());
+                        let message = Message::new(self.user.clone(), to_list, raw_body);
                         SmtpClientBuilder::new(self.smtp_host.clone(), 465)
                             .implicit_tls(true)
                             .credentials((self.user.clone(), self.password.clone()))
@@ -61,6 +65,23 @@ impl<'a> MailSender<'a> {
     }
     fn get_domain_name(email: &String) -> Option<&str> {
         email.split_once(AROBASE).and_then(|t| Some(t.1))
+    }
+
+    fn replace<T>(source: &[T], from: &[T], to: &[T]) -> Vec<T> where T: Clone + PartialEq {
+        let mut result = source.to_vec();
+        let from_len = from.len();
+        let to_len = to.len();
+
+        let mut i = 0;
+        while i + from_len <= result.len() {
+            if result[i..].starts_with(from) {
+                result.splice(i..i + from_len, to.iter().cloned());
+                i += to_len;
+            } else {
+                i += 1;
+            }
+        }
+        result
     }
 }
 
@@ -115,4 +136,15 @@ mod test {
         assert_eq!(MailSender::get_domain_name(&"foo@bar.com".to_string()).unwrap(), "bar.com".to_string());
         assert_eq!(MailSender::get_domain_name(&"not_email".to_string()), None);
     }
+
+    #[test]
+    fn search_replace_bytes() {
+        assert_eq!(MailSender::replace("Date: Thu,  7 Sep 2023 15:16:52 +0000
+        Message-ID: <id>
+        X-Mailer: Thunderbird".as_bytes(), "id".as_bytes(), "this_is_a_new_id".as_bytes()),
+        "Date: Thu,  7 Sep 2023 15:16:52 +0000
+        Message-ID: <this_is_a_new_id>
+        X-Mailer: Thunderbird".as_bytes())
+    }
+
 }

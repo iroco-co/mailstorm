@@ -19,6 +19,7 @@ rand = "0.8"
 structopt = "0.3.26"
 mail-send = "0.4.0"
 csv = "1.2"
+uuid = { version = "1.4", features = ["v4"]}
 mail-parser = "0.8.2"
 async-imap = { version = "0.9.1", default-features = false, features = [ "tokio", "runtime-tokio" ] }
 async-native-tls = { version = "0.5", default-features = false, features = [ "runtime-tokio" ] }
