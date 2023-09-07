@@ -42,9 +42,27 @@ impl ImapClient {
                 NewData(data) => {
                     let s = String::from_utf8(data.borrow_owner().to_vec()).unwrap();
                     debug!("IDLE data:\n{}", s);
+                    let _uids = Self::get_exists_from_idle(&s);
                 }
                 reason => {info!("IDLE failed {:?}", reason)}
             }
         }
+    }
+    fn get_exists_from_idle(idle_data: &str) -> Vec<&str> {
+        let lines = idle_data.lines();
+        lines.filter(|l| l.contains("EXISTS")).map(|l| {
+            l.trim().split(' ').filter(|s| !s.is_empty()).nth(1).unwrap()
+        }).collect()
+    }
+}
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn get_exists_from_idle_with_2_lines() {
+        assert_eq!(ImapClient::get_exists_from_idle("   * 18 EXISTS
+        * 1 RECENT
+        "), vec!["18"]);
     }
 }
