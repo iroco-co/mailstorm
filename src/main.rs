@@ -14,7 +14,7 @@ use crate::imap_client::ImapClient;
 use crate::mail_sender::MailSender;
 use crate::pace_setter::PaceSetter;
 
-static MAIL_USERS: [(&str, &str); 2]  = [("bruno@test.iroco.co", "BT_motDeP4sseDePreprod"), ("user2@domain.com", "mdp2")];
+static MAIL_USERS: [(&str, &str); 2]  = [("user2@domain.com", "mdp2"), ("user2@domain.com", "mdp2")];
 
 /// Mail injector to generate SMTP/IMAP load to a mail platform.
 #[derive(StructOpt, Debug)]
