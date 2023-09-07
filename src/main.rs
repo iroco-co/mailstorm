@@ -1,19 +1,20 @@
-mod pace_setter;
-mod mail_sender;
-mod imap_client;
-
 #[macro_use]
 extern crate log;
 
-use structopt::StructOpt;
-use std::io::Write;
-use async_channel::{Sender, Receiver, unbounded};
+use std::fs::File;
+use std::io::{BufReader, Error, Write};
+
+use async_channel::{Receiver, Sender, unbounded};
 use mail_parser::Message;
+use structopt::StructOpt;
+
 use crate::imap_client::ImapClient;
 use crate::mail_sender::MailSender;
 use crate::pace_setter::PaceSetter;
 
-static MAIL_USERS: [(&str, &str); 2]  = [("bruno@test.iroco.co", "BT_motDeP4sseDePreprod"), ("user2@domain.com", "mdp2")];
+mod pace_setter;
+mod mail_sender;
+mod imap_client;
 
 /// Mail injector to generate SMTP/IMAP load to a mail platform.
 #[derive(StructOpt, Debug)]
@@ -27,6 +28,9 @@ struct Args {
     /// directory where the mails are going to be read. Default to './mails'
     mail_dir: Option<String>,
     #[structopt(long)]
+    /// CSV file where users login/password can be loaded. Defaults to users.csv
+    users_csv: Option<String>,
+    #[structopt(long)]
     /// average pace of injection in second for pace setter. Default to 1s.
     pace_seconds: Option<u8>,
     #[structopt(long)]
@@ -39,8 +43,21 @@ pub struct MailstormConfig {
     pub smtp_host: String,
     pub imap_host: String,
     pub mail_dir: String,
+    pub users_csv: String,
     pub worker_nb: u8,
     pub pace_seconds: u8
+}
+
+#[derive(Debug, Clone)]
+struct MailAccount {
+    user: String,
+    password: String
+}
+
+impl MailAccount {
+    fn new(user: &str, password: &str) -> Self {
+        Self { user: user.to_string(), password: password.to_string()}
+    }
 }
 
 impl Args {
@@ -54,6 +71,10 @@ impl Args {
             mail_dir: match self.mail_dir {
                 Some(mail_dir) => mail_dir,
                 None => "./mails".to_string()
+            },
+            users_csv: match self.users_csv {
+                Some(users_csv) => users_csv,
+                None => "./users.csv".to_string()
             },
             worker_nb: match self.worker_nb {
                 Some(worker_nb) => worker_nb, 
@@ -72,30 +93,44 @@ async fn main() {
     init_logs();
     let opt = Args::from_args();
     let config = opt.to_config();
-    info!("Running mailstorm with SMTP host={:?} and {:?} worker(s)", config.smtp_host, MAIL_USERS.len());
+    let mail_accounts = load_users(&config.users_csv).unwrap();
+    info!("Running mailstorm with SMTP host={:?} and {:?} worker(s)", config.smtp_host, mail_accounts.len());
+
     let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
 
     let mut pace_setter = PaceSetter::new(sx.clone(), config.mail_dir, config.pace_seconds);
+    info!("Loaded {} emails", pace_setter.load_messages().unwrap());
 
-    for user in MAIL_USERS {
+    for mail_account in &mail_accounts {
         let mut mail_sender = MailSender::new(rx.clone(),
                                               config.smtp_host.clone(),
-                                              user.0.to_string(), user.1.to_string()).await;
+                                              mail_account.user.clone(), mail_account.password.clone()).await;
         tokio::task::spawn(async move {
             mail_sender.run_loop().await
         });
     }
 
     if !config.imap_host.is_empty() {
-        for user in MAIL_USERS {
+        for mail_account in mail_accounts {
             let mut imap_client = ImapClient::new(config.imap_host.as_str());
             tokio::task::spawn(async move {
-                imap_client.run_loop(user.0, user.1).await
+                imap_client.run_loop(&mail_account.user, &mail_account.password).await
             });
         }
     }
-    pace_setter.load_messages();
     pace_setter.run_loop().await;
+}
+
+fn load_users(file_path: &str) -> Result<Vec<MailAccount>, Error> {
+    info!("Loading user accounts from {:?}", file_path);
+    let reader = BufReader::new(File::open(file_path)?);
+    let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(reader);
+    let mut results: Vec<MailAccount> = vec![];
+    for record_res in rdr.records() {
+        let record = record_res?;
+        results.push(MailAccount::new(record.get(0).unwrap(), record.get(1).unwrap()))
+    }
+    Ok(results)
 }
 
 fn init_logs() {

@@ -18,16 +18,16 @@ impl <'a> PaceSetter<'a> {
         Self { queue, mail_dir, pace_seconds, messages: Vec::new()}
     }
 
-    pub fn load_messages(&mut self) -> () {
+    pub fn load_messages(&mut self) -> Result<usize, std::io::Error> {
         info!("Loading emails from {:?}", self.mail_dir);
-        let paths = fs::read_dir(&self.mail_dir).unwrap();
+        let paths = fs::read_dir(&self.mail_dir)?;
         for path in paths {
             let path = path.unwrap().path();
-            let contents = fs::read(path).unwrap();
+            let contents = fs::read(path)?;
             let message = Message::parse(contents.as_slice()).unwrap();
             self.messages.push(message.into_owned());
         }
-        info!("Loaded {} emails", self.messages.len());
+        Ok(self.messages.len())
     }
 
     pub async fn run_loop(&self) {
