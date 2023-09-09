@@ -36,6 +36,12 @@ ARGS:
     <imap-host>    host of the IMAP server
 ```
 
+If you want [logs](https://docs.rs/env_logger/latest/env_logger/) you can use the env variable `RUST_LOG`:
+
+```shell
+RUST_LOG=info mailtempest smtp.host imap.host
+```
+
 ## For SMTP inbound mail
 
 It reads mail samples from a directory and randomly send them to the configured SMTP url. 
