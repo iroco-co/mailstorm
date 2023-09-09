@@ -12,7 +12,7 @@ It is intented to test your mail servers and your mail settings.
 
 # How it works?
 
-![architecture schema](doc/mailtempest.drawio.png))
+![architecture schema](doc/mailtempest.drawio.png)
 
 ```shell
 mailtempest 0.1.0
