@@ -877,6 +877,7 @@ dependencies = [
  "async-native-tls",
  "csv",
  "env_logger",
+ "futures",
  "log",
  "mail-parser",
  "mail-send",

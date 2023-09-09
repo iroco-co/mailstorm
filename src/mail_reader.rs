@@ -3,6 +3,7 @@ use std::time::Duration;
 use async_imap::Client;
 use async_imap::extensions::idle::IdleResponse::NewData;
 use tokio::{net::TcpStream, task, time::sleep};
+use futures::TryStreamExt;
 
 static IMAP_PORT: u16 = 993;
 
@@ -28,9 +29,9 @@ impl MailReader {
         info!("user {} logged in into IMAP server", user);
 
         session.select("INBOX").await.unwrap();
-        let mut idle = session.idle();
-        idle.init().await.unwrap();
         loop {
+            let mut idle = session.idle();
+            idle.init().await.unwrap();
             let (idle_wait, interrupt) = idle.wait();
             task::spawn(async move {
                 debug!("IDLE: waiting for 30s");
@@ -42,9 +43,16 @@ impl MailReader {
                 NewData(data) => {
                     let s = String::from_utf8(data.borrow_owner().to_vec()).unwrap();
                     debug!("IDLE data:\n{}", s);
-                    let _uids = Self::get_exists_from_idle(&s);
+                    let uids = Self::get_exists_from_idle(&s);
+                    session = idle.done().await.unwrap();
+                    let messages_stream = session.fetch(uids.join(","), "RFC822").await.unwrap();
+                    let messages: Vec<_> = messages_stream.try_collect().await.unwrap();
+                    debug!("IDLE read {} messages", messages.len());
                 }
-                reason => {info!("IDLE failed {:?}", reason)}
+                reason => {
+                    info!("IDLE failed {:?}", reason);
+                    session = idle.done().await.unwrap();
+                }
             }
         }
     }
