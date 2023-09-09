@@ -6,11 +6,11 @@ use tokio::{net::TcpStream, task, time::sleep};
 
 static IMAP_PORT: u16 = 993;
 
-pub struct ImapClient {
+pub struct MailReader {
     imap_host: String
 }
 
-impl ImapClient {
+impl MailReader {
     pub fn new(imap_host: &str) -> Self {
         Self { imap_host: imap_host.to_string() }
     }
@@ -61,7 +61,7 @@ mod test {
 
     #[test]
     fn get_exists_from_idle_with_2_lines() {
-        assert_eq!(ImapClient::get_exists_from_idle("   * 18 EXISTS
+        assert_eq!(MailReader::get_exists_from_idle("   * 18 EXISTS
         * 1 RECENT
         "), vec!["18"]);
     }

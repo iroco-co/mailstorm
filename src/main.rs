@@ -8,13 +8,13 @@ use async_channel::{Receiver, Sender, unbounded};
 use mail_parser::Message;
 use structopt::StructOpt;
 
-use crate::imap_client::ImapClient;
+use crate::mail_reader::MailReader;
 use crate::mail_sender::MailSender;
 use crate::pace_maker::PaceMaker;
 
 mod pace_maker;
 mod mail_sender;
-mod imap_client;
+mod mail_reader;
 
 /// Mail injector to generate SMTP/IMAP load to a mail platform.
 #[derive(StructOpt, Debug)]
@@ -31,7 +31,7 @@ struct Args {
     /// CSV file where users login/password can be loaded. Defaults to users.csv
     users_csv: Option<String>,
     #[structopt(long)]
-    /// average pace of injection in second for pace setter. Default to 1s.
+    /// average pace of injection in second for pace maker. Default to 1s.
     pace_seconds: Option<u8>,
     #[structopt(long)]
     /// number of workers. Default to nb users.
@@ -98,8 +98,8 @@ async fn main() {
 
     let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
 
-    let mut pace_setter = PaceMaker::new(sx.clone(), config.mail_dir, config.pace_seconds);
-    info!("Loaded {} emails", pace_setter.load_messages().unwrap());
+    let mut pace_maker = PaceMaker::new(sx.clone(), config.mail_dir, config.pace_seconds);
+    info!("Loaded {} emails", pace_maker.load_messages().unwrap());
 
     for mail_account in &mail_accounts {
         let mut mail_sender = MailSender::new(rx.clone(),
@@ -112,13 +112,13 @@ async fn main() {
 
     if !config.imap_host.is_empty() {
         for mail_account in mail_accounts {
-            let mut imap_client = ImapClient::new(config.imap_host.as_str());
+            let mut mail_reader = MailReader::new(config.imap_host.as_str());
             tokio::task::spawn(async move {
-                imap_client.run_loop(&mail_account.user, &mail_account.password).await
+                mail_reader.run_loop(&mail_account.user, &mail_account.password).await
             });
         }
     }
-    pace_setter.run_loop().await;
+    pace_maker.run_loop().await;
 }
 
 fn load_users(file_path: &str) -> Result<Vec<MailAccount>, Error> {
