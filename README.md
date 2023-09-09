@@ -1,7 +1,7 @@
 # mailtempest [![CircleCI](https://dl.circleci.com/status-badge/img/gh/iroco-co/mailtempest/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/iroco-co/mailtempest/tree/main)
 
-> If we can’t face it, we can’t escape it
-> But tonight the storm’s come
+> If we can’t face it, we can’t escape it 
+> But tonight the storm’s come 
 >              -- Kate Tempest
 
 This is a mail injector based on tokio and [Stalwart Labs](https://github.com/stalwartlabs) mail libraries.
