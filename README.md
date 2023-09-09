@@ -8,9 +8,9 @@ This is a mail injector based on tokio and [Stalwart Labs](https://github.com/st
 
 For IMAP it's using [async_imap](https://github.com/async-email/async-imap).
 
-It is intented to test your mail servers and your mail settings.
+It is intended to bench your mail servers and your mail server settings.
 
-# How it works?
+# How does it work?
 
 ![architecture schema](doc/mailtempest.drawio.png)
 
@@ -40,9 +40,9 @@ ARGS:
 
 It reads mail samples from a directory and randomly send them to the configured SMTP url. 
 
-It is multithreaded and will send mails concurrently with `worker_nb` threads.
+It is multithreaded and will send mails concurrently with `worker_nb` threads (=number of mail users for now).
 
-It sends them with an average of `worker_pace` seconds.
+It sends them with an average of `worker_pace` seconds. It can be set to 0 to continuously send mails.
 
 ## For IMAP reading
 
