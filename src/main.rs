@@ -18,7 +18,7 @@ mod imap_client;
 
 /// Mail injector to generate SMTP/IMAP load to a mail platform.
 #[derive(StructOpt, Debug)]
-#[structopt(name = "mailstorm")]
+#[structopt(name = "mailtempest")]
 struct Args {
     /// host of the SMTP server.
     smtp_host: String,
@@ -39,7 +39,7 @@ struct Args {
 }
 
 #[derive(Debug, Clone)]
-pub struct MailstormConfig {
+pub struct MailtempestConfig {
     pub smtp_host: String,
     pub imap_host: String,
     pub mail_dir: String,
@@ -61,8 +61,8 @@ impl MailAccount {
 }
 
 impl Args {
-    fn to_config(self) -> MailstormConfig {
-        MailstormConfig {
+    fn to_config(self) -> MailtempestConfig {
+        MailtempestConfig {
             smtp_host: self.smtp_host,
             imap_host: match self.imap_host {
                 Some(imap_host) => imap_host,
@@ -94,7 +94,7 @@ async fn main() {
     let opt = Args::from_args();
     let config = opt.to_config();
     let mail_accounts = load_users(&config.users_csv).unwrap();
-    info!("Running mailstorm with SMTP host={:?} and {:?} worker(s)", config.smtp_host, mail_accounts.len());
+    info!("Running mailtempest with SMTP host={:?} and {:?} worker(s)", config.smtp_host, mail_accounts.len());
 
     let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
 
