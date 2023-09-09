@@ -12,6 +12,28 @@ It is intented to test your mail servers and your mail settings.
 
 # How it works?
 
+```shell
+mailtempest 0.1.0
+Mail injector to generate SMTP/IMAP load to a mail platform
+
+USAGE:
+    mailtempest [OPTIONS] <smtp-host> [imap-host]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+        --mail-dir <mail-dir>            directory where the mails are going to be read. Default to './mails'
+        --pace-seconds <pace-seconds>    average pace of injection in second for pace setter. Default to 1s
+        --users-csv <users-csv>          CSV file where users login/password can be loaded. Defaults to users.csv
+        --worker-nb <worker-nb>          number of workers. Default to nb users
+
+ARGS:
+    <smtp-host>    host of the SMTP server
+    <imap-host>    host of the IMAP server
+```
+
 ## For SMTP inbound mail
 
 It reads mail samples from a directory and randomly send them to the configured SMTP url. 

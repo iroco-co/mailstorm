@@ -10,9 +10,9 @@ use structopt::StructOpt;
 
 use crate::imap_client::ImapClient;
 use crate::mail_sender::MailSender;
-use crate::pace_setter::PaceSetter;
+use crate::pace_maker::PaceMaker;
 
-mod pace_setter;
+mod pace_maker;
 mod mail_sender;
 mod imap_client;
 
@@ -98,7 +98,7 @@ async fn main() {
 
     let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
 
-    let mut pace_setter = PaceSetter::new(sx.clone(), config.mail_dir, config.pace_seconds);
+    let mut pace_setter = PaceMaker::new(sx.clone(), config.mail_dir, config.pace_seconds);
     info!("Loaded {} emails", pace_setter.load_messages().unwrap());
 
     for mail_account in &mail_accounts {

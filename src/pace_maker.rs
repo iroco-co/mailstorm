@@ -6,15 +6,15 @@ use rand::random;
 use tokio::time::sleep;
 use async_channel::Sender;
 
-pub struct PaceSetter<'a> {
+pub struct PaceMaker<'a> {
     mail_dir: String,
     pace_seconds: u8,
     messages: Vec<Message<'a>>,
     queue: Sender<Message<'a>>
 }
 
-impl <'a> PaceSetter<'a> {
-    pub fn new(queue: Sender<Message<'a>>, mail_dir: String, pace_seconds: u8) -> PaceSetter<'a> {
+impl <'a> PaceMaker<'a> {
+    pub fn new(queue: Sender<Message<'a>>, mail_dir: String, pace_seconds: u8) -> PaceMaker<'a> {
         Self { queue, mail_dir, pace_seconds, messages: Vec::new()}
     }
 
