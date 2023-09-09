@@ -8,6 +8,8 @@ This is a mail injector based on tokio and [Stalwart Labs](https://github.com/st
 
 For IMAP it's using [async_imap](https://github.com/async-email/async-imap).
 
+It is intented to test your mail servers and your mail settings.
+
 # How it works?
 
 ## For SMTP inbound mail
