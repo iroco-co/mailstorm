@@ -48,7 +48,7 @@ impl<'a> MailSender<'a> {
                             .unwrap()
                             .send(message)
                             .await
-                            .unwrap();
+                            .unwrap_or_else(| e | error!("error while sending mail {:?}", e));
                     }
                 }
                 Err(e) => error!("received error from channel {:?}", e)

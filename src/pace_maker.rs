@@ -8,13 +8,13 @@ use async_channel::Sender;
 
 pub struct PaceMaker<'a> {
     mail_dir: String,
-    pace_seconds: u8,
+    pace_seconds: f32,
     messages: Vec<Message<'a>>,
     queue: Sender<Message<'a>>
 }
 
 impl <'a> PaceMaker<'a> {
-    pub fn new(queue: Sender<Message<'a>>, mail_dir: String, pace_seconds: u8) -> PaceMaker<'a> {
+    pub fn new(queue: Sender<Message<'a>>, mail_dir: String, pace_seconds: f32) -> PaceMaker<'a> {
         Self { queue, mail_dir, pace_seconds, messages: Vec::new()}
     }
 

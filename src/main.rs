@@ -31,8 +31,8 @@ struct Args {
     /// CSV file where users login/password can be loaded. Defaults to users.csv
     users_csv: Option<String>,
     #[structopt(long)]
-    /// average pace of injection in second for pace maker. Default to 1s.
-    pace_seconds: Option<u8>,
+    /// average pace of injection in second for pace maker (float). Default to 1s.
+    pace_seconds: Option<f32>,
     #[structopt(long)]
     /// number of workers. Default to nb users.
     worker_nb: Option<u8>,
@@ -45,7 +45,7 @@ pub struct MailtempestConfig {
     pub mail_dir: String,
     pub users_csv: String,
     pub worker_nb: u8,
-    pub pace_seconds: u8
+    pub pace_seconds: f32
 }
 
 #[derive(Debug, Clone)]
@@ -82,7 +82,7 @@ impl Args {
             },
             pace_seconds: match self.pace_seconds {
                 Some(pace_seconds) => pace_seconds,
-                None => 1
+                None => 1.0
             },
         }
     }
