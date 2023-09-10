@@ -50,7 +50,7 @@ impl MailReader {
                     debug!("IDLE read {} messages", messages.len());
                 }
                 reason => {
-                    info!("IDLE failed {:?}", reason);
+                    debug!("IDLE failed {:?}", reason);
                     session = idle.done().await.unwrap();
                 }
             }
