@@ -139,7 +139,7 @@ fn init_logs() {
             .format(|buf, record| {
                 writeln!(
                     buf,
-                    "<{}>{}: {}",
+                    "<{}>{}: [{:?}] {}",
                     match record.level() {
                         log::Level::Error => 3,
                         log::Level::Warn => 4,
@@ -148,10 +148,24 @@ fn init_logs() {
                         log::Level::Trace => 7,
                     },
                     record.target(),
+                    std::thread::current().id(),
                     record.args()
                 )
             })
             .init(),
-        _ => env_logger::init(),
+        _ => env_logger::builder()
+            .format(|buf, record| {
+                writeln!(
+                    buf,
+                    "{} {:<5} {}: [{:?}] {}",
+                    buf.timestamp_micros(),
+                    buf.default_level_style(record.level())
+                        .value(record.level()),
+                    record.target(),
+                    std::thread::current().id(),
+                    record.args()
+                )
+            })
+            .init(),
     };
 }
