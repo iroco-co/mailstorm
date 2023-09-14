@@ -24,42 +24,30 @@ mod utils;
 /// Mail injector to generate SMTP/IMAP load to a mail platform.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "mailtempest")]
-struct Args {
+struct Opt {
     /// host of the SMTP server.
     smtp_host: String,
     /// host of the IMAP server.
     imap_host: Option<String>,
-    #[structopt(long)]
-    /// directory where the mails are going to be read. Default to './mails'
-    mail_dir: Option<String>,
-    #[structopt(long)]
-    /// CSV file where users login/password can be loaded. Defaults to users.csv
-    users_csv: Option<String>,
-    #[structopt(long)]
-    /// average pace of injection in second for pace maker (float). Default to 1s.
-    pace_seconds: Option<f32>,
+    #[structopt(default_value = "./mail")]
+    /// directory where the mails are going to be read.
+    mail_dir: String,
+    #[structopt(default_value = "./users.csv")]
+    /// CSV file where users login/password can be loaded.
+    users_csv: String,
+    #[structopt(default_value = "1.0")]
+    /// average pace of injection in second for pace maker (float).
+    pace_seconds: f32,
     #[structopt(long)]
     /// there is no random delay between messages. The delay is always pace_seconds.
-    fixed_pace: Option<bool>,
-    #[structopt(long)]
+    fixed_pace: bool,
+    #[structopt(default_value = "1")]
     /// number of workers.
-    workers: Option<usize>,
+    workers: usize,
     #[structopt(long)]
     /// utility prepare command (boolean). It will use the CSV file to replace all the email addresses in the files located in mail directory
     /// and rewrite them with .mt extension
-    prepare: Option<bool>
-}
-
-#[derive(Debug, Clone)]
-pub struct MailtempestConfig {
-    pub smtp_host: String,
-    pub imap_host: String,
-    pub mail_dir: String,
-    pub users_csv: String,
-    pub workers: usize,
-    pub pace_seconds: f32,
-    pub fixed_pace: bool,
-    pub prepare: bool
+    prepare: bool
 }
 
 #[derive(Debug, Clone)]
@@ -74,47 +62,10 @@ impl MailAccount {
     }
 }
 
-impl Args {
-    fn to_config(self) -> MailtempestConfig {
-        MailtempestConfig {
-            smtp_host: self.smtp_host,
-            imap_host: match self.imap_host {
-                Some(imap_host) => imap_host,
-                None => String::new()
-            },
-            mail_dir: match self.mail_dir {
-                Some(mail_dir) => mail_dir,
-                None => "./mails".to_string()
-            },
-            users_csv: match self.users_csv {
-                Some(users_csv) => users_csv,
-                None => "./users.csv".to_string()
-            },
-            workers: match self.workers {
-                Some(workers) => workers,
-                None => 1 
-            },
-            pace_seconds: match self.pace_seconds {
-                Some(pace_seconds) => pace_seconds,
-                None => 1.0
-            },
-            prepare: match self.prepare {
-                Some(prepare) => prepare,
-                None => false
-            },
-            fixed_pace: match self.fixed_pace {
-                Some(fixed_pace) => fixed_pace,
-                None => false
-            },
-        }
-    }
-}
-
 #[tokio::main]
 async fn main() {
     init_logs();
-    let opt = Args::from_args();
-    let config = opt.to_config();
+    let config = Opt::from_args();
     let mail_accounts = load_users(&config.users_csv).unwrap();
     if config.prepare {
         prepare(mail_accounts, config.mail_dir);
@@ -141,9 +92,9 @@ async fn main() {
         });
     }
 
-    if !config.imap_host.is_empty() {
+    if !config.imap_host.is_none() {
         for mail_account in mail_accounts {
-            let mut mail_reader = MailReader::new(config.imap_host.as_str());
+            let mut mail_reader = MailReader::new(config.imap_host.clone().unwrap().as_str());
             rt.spawn(async move {
                 mail_reader.run_loop(&mail_account.user, &mail_account.password).await
             });
