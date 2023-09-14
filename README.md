@@ -36,7 +36,7 @@ OPTIONS:
 
 ARGS:
     <smtp-host>    host of the SMTP server
-    <imap-host>    host of the IMAP server
+    <imap-host>    host of the IMAP server. If not provided, only SMTP load will be injected
 ```
 
 If you want [logs](https://docs.rs/env_logger/latest/env_logger/) you can use the env variable `RUST_LOG`:

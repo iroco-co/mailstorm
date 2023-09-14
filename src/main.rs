@@ -28,7 +28,7 @@ struct Opt {
     /// host of the SMTP server.
     #[structopt(required_unless("prepare"))]
     smtp_host: Option<String>,
-    /// host of the IMAP server.
+    /// host of the IMAP server. If not provided, only SMTP load will be injected.
     imap_host: Option<String>,
     #[structopt(long, default_value = "./mails")]
     /// directory where the mails are going to be read.
