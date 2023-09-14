@@ -1,8 +1,11 @@
 #[macro_use]
 extern crate log;
 
+use std::borrow::Cow;
+use std::fs;
 use std::fs::File;
 use std::io::{BufReader, Error, Write};
+use std::process::exit;
 
 use async_channel::{Receiver, Sender, unbounded};
 use mail_parser::Message;
@@ -15,6 +18,7 @@ use crate::pace_maker::PaceMaker;
 mod pace_maker;
 mod mail_sender;
 mod mail_reader;
+mod utils;
 
 /// Mail injector to generate SMTP/IMAP load to a mail platform.
 #[derive(StructOpt, Debug)]
@@ -36,6 +40,10 @@ struct Args {
     #[structopt(long)]
     /// number of workers. Default to nb users.
     worker_nb: Option<u8>,
+    #[structopt(long)]
+    /// utility prepare command (boolean). It will use the CSV file to replace all the email addresses in the files located in mail directory
+    /// and rewrite them with .mt extension
+    prepare: Option<bool>
 }
 
 #[derive(Debug, Clone)]
@@ -45,7 +53,8 @@ pub struct MailtempestConfig {
     pub mail_dir: String,
     pub users_csv: String,
     pub worker_nb: u8,
-    pub pace_seconds: f32
+    pub pace_seconds: f32,
+    pub prepare: bool
 }
 
 #[derive(Debug, Clone)]
@@ -84,16 +93,24 @@ impl Args {
                 Some(pace_seconds) => pace_seconds,
                 None => 1.0
             },
+            prepare: match self.prepare {
+                Some(prepare) => prepare,
+                None => false
+            },
         }
     }
 }
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 10)]
+#[tokio::main(flavor = "multi_thread", worker_threads = 17)]
 async fn main() {
     init_logs();
     let opt = Args::from_args();
     let config = opt.to_config();
     let mail_accounts = load_users(&config.users_csv).unwrap();
+    if config.prepare {
+        prepare(mail_accounts, config.mail_dir);
+        exit(0);
+    }
     info!("Running mailtempest with SMTP host={:?} and {:?} worker(s)", config.smtp_host, mail_accounts.len());
 
     let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
@@ -119,6 +136,30 @@ async fn main() {
         }
     }
     pace_maker.run_loop().await;
+}
+
+fn prepare(accounts: Vec<MailAccount>, mail_dir: String) {
+    let mut iter_mail = accounts.iter().cycle();
+
+    let paths = fs::read_dir(mail_dir).unwrap();
+    for path in paths {
+        let path = path.unwrap().path();
+        let contents = fs::read(&path).unwrap();
+        let parsed_message = Message::parse(contents.as_slice()).unwrap();
+        let mut to_list: Vec<String> = utils::get_recipients(&parsed_message.to());
+        let mut cc_list: Vec<String> = utils::get_recipients(&parsed_message.cc());
+        let mut bcc_list: Vec<String> = utils::get_recipients(&parsed_message.bcc());
+        to_list.append(&mut cc_list);
+        to_list.append(&mut bcc_list);
+        let mut new_contents = parsed_message.raw_message;
+        for email in to_list {
+            let cloned_content = new_contents.clone();
+            new_contents = Cow::from(utils::replace::<u8>(&cloned_content, email.as_bytes(), iter_mail.next().unwrap().user.as_bytes()));
+        }
+        let mut new_file_path = path.clone();
+        new_file_path.set_extension(".mt");
+        fs::write(new_file_path, new_contents).unwrap();
+    }
 }
 
 fn load_users(file_path: &str) -> Result<Vec<MailAccount>, Error> {
