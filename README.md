@@ -19,26 +19,24 @@ mailtempest 0.1.0
 Mail injector to generate SMTP/IMAP load to a mail platform
 
 USAGE:
-    mailtempest [OPTIONS] <smtp-host> [imap-host]
+    mailtempest [FLAGS] [OPTIONS] <smtp-host> [imap-host]
 
 FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+        --fixed-pace    there is no random delay between messages. The delay is always pace_seconds
+    -h, --help          Prints help information
+        --prepare       utility prepare command (boolean). It will use the CSV file to replace all the email addresses
+                        in the files located in mail directory and rewrite them with .mt extension
+    -V, --version       Prints version information
 
 OPTIONS:
-        --fixed-pace <fixed-pace>        there is no random delay between messages. The delay is always pace_seconds
-        --mail-dir <mail-dir>            directory where the mails are going to be read. Default to './mails'
-        --pace-seconds <pace-seconds>    average pace of injection in second for pace maker (float). Default to 1s
-        --prepare <prepare>              utility prepare command (boolean). It will use the CSV file to replace all the
-                                         email addresses in the files located in mail directory and rewrite them with
-                                         .mt extension
-        --users-csv <users-csv>          CSV file where users login/password can be loaded. Defaults to users.csv
-        --workers <workers>              number of workers
+        --mail-dir <mail-dir>            directory where the mails are going to be read [default: ./mails]
+        --pace-seconds <pace-seconds>    average pace of injection in second for pace maker (float) [default: 1.0]
+        --users-csv <users-csv>          CSV file where users login/password can be loaded [default: ./users.csv]
+        --workers <workers>              number of workers [default: 1]
 
 ARGS:
     <smtp-host>    host of the SMTP server
     <imap-host>    host of the IMAP server
-
 ```
 
 If you want [logs](https://docs.rs/env_logger/latest/env_logger/) you can use the env variable `RUST_LOG`:
