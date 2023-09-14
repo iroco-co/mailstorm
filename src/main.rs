@@ -26,7 +26,8 @@ mod utils;
 #[structopt(name = "mailtempest")]
 struct Opt {
     /// host of the SMTP server.
-    smtp_host: String,
+    #[structopt(required_unless("prepare"))]
+    smtp_host: Option<String>,
     /// host of the IMAP server.
     imap_host: Option<String>,
     #[structopt(long, default_value = "./mails")]
@@ -38,14 +39,14 @@ struct Opt {
     #[structopt(long, default_value = "1.0")]
     /// average pace of injection in second for pace maker (float).
     pace_seconds: f32,
-    #[structopt(long)]
+    #[structopt(long, short)]
     /// there is no random delay between messages. The delay is always pace_seconds.
     fixed_pace: bool,
     #[structopt(long, default_value = "1")]
     /// number of workers.
     workers: usize,
     #[structopt(long)]
-    /// utility prepare command (boolean). It will use the CSV file to replace all the email addresses in the files located in mail directory
+    /// utility prepare command. It will use the CSV file to replace all the email addresses in the files located in mail directory
     /// and rewrite them with .mt extension
     prepare: bool
 }
@@ -72,7 +73,9 @@ async fn main() {
         exit(0);
     }
 
-    info!("Running mailtempest with SMTP host={}, {} users and {} worker(s)", config.smtp_host, mail_accounts.len(), config.workers);
+    let smtp_host = config.smtp_host.unwrap();
+
+    info!("Running mailtempest with SMTP host={}, {} users and {} worker(s)", smtp_host, mail_accounts.len(), config.workers);
     let rt = runtime::Builder::new_multi_thread()
         .worker_threads(config.workers)
         .enable_io()
@@ -84,8 +87,7 @@ async fn main() {
     pace_maker.load_messages().expect("cannot load messages");
 
     for mail_account in &mail_accounts {
-        let mut mail_sender = MailSender::new(rx.clone(),
-                                              config.smtp_host.clone(),
+        let mut mail_sender = MailSender::new(rx.clone(), smtp_host.clone(),
                                               mail_account.user.clone(), mail_account.password.clone()).await;
         rt.spawn(async move {
             mail_sender.run_loop().await
@@ -104,11 +106,13 @@ async fn main() {
 }
 
 fn prepare(accounts: Vec<MailAccount>, mail_dir: String) {
+    info!("Change email recipients from dir {}", mail_dir);
     let mut iter_mail = accounts.iter().cycle();
 
     let paths = fs::read_dir(mail_dir).unwrap();
     for path in paths {
         let path = path.unwrap().path();
+        if path.is_dir() || path.ends_with(".mt") { continue }
         let contents = fs::read(&path).unwrap();
         let parsed_message = Message::parse(contents.as_slice()).unwrap();
         let mut to_list: Vec<String> = utils::get_recipients(&parsed_message.to());
@@ -118,8 +122,7 @@ fn prepare(accounts: Vec<MailAccount>, mail_dir: String) {
         to_list.append(&mut bcc_list);
         let mut new_contents = parsed_message.raw_message;
         for email in to_list {
-            let cloned_content = new_contents.clone();
-            new_contents = Cow::from(utils::replace::<u8>(&cloned_content, email.as_bytes(), iter_mail.next().unwrap().user.as_bytes()));
+            new_contents = Cow::from(utils::replace::<u8>(new_contents.as_ref(), email.as_bytes(), iter_mail.next().unwrap().user.as_bytes()));
         }
         let mut new_file_path = path.clone();
         new_file_path.set_extension(".mt");

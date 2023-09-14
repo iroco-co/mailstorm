@@ -22,10 +22,10 @@ USAGE:
     mailtempest [FLAGS] [OPTIONS] <smtp-host> [imap-host]
 
 FLAGS:
-        --fixed-pace    there is no random delay between messages. The delay is always pace_seconds
+    -f, --fixed-pace    there is no random delay between messages. The delay is always pace_seconds
     -h, --help          Prints help information
-        --prepare       utility prepare command (boolean). It will use the CSV file to replace all the email addresses
-                        in the files located in mail directory and rewrite them with .mt extension
+        --prepare       utility prepare command. It will use the CSV file to replace all the email addresses in the
+                        files located in mail directory and rewrite them with .mt extension
     -V, --version       Prints version information
 
 OPTIONS:
