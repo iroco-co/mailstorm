@@ -39,7 +39,7 @@ struct Args {
     /// average pace of injection in second for pace maker (float). Default to 1s.
     pace_seconds: Option<f32>,
     #[structopt(long)]
-    /// fixed pace : there is no random delay between messages. The delay is always pace_seconds.
+    /// there is no random delay between messages. The delay is always pace_seconds.
     fixed_pace: Option<bool>,
     #[structopt(long)]
     /// number of workers.

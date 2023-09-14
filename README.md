@@ -26,8 +26,7 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-        --fixed-pace <fixed-pace>        fixed pace : there is no random delay between messages. The delay is always
-                                         pace-seconds
+        --fixed-pace <fixed-pace>        there is no random delay between messages. The delay is always pace_seconds
         --mail-dir <mail-dir>            directory where the mails are going to be read. Default to './mails'
         --pace-seconds <pace-seconds>    average pace of injection in second for pace maker (float). Default to 1s
         --prepare <prepare>              utility prepare command (boolean). It will use the CSV file to replace all the
@@ -39,6 +38,7 @@ OPTIONS:
 ARGS:
     <smtp-host>    host of the SMTP server
     <imap-host>    host of the IMAP server
+
 ```
 
 If you want [logs](https://docs.rs/env_logger/latest/env_logger/) you can use the env variable `RUST_LOG`:
