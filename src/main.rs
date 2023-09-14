@@ -10,6 +10,7 @@ use std::process::exit;
 use async_channel::{Receiver, Sender, unbounded};
 use mail_parser::Message;
 use structopt::StructOpt;
+use tokio::runtime;
 
 use crate::mail_reader::MailReader;
 use crate::mail_sender::MailSender;
@@ -38,8 +39,8 @@ struct Args {
     /// average pace of injection in second for pace maker (float). Default to 1s.
     pace_seconds: Option<f32>,
     #[structopt(long)]
-    /// number of workers. Default to nb users.
-    worker_nb: Option<u8>,
+    /// number of workers.
+    workers: Option<usize>,
     #[structopt(long)]
     /// utility prepare command (boolean). It will use the CSV file to replace all the email addresses in the files located in mail directory
     /// and rewrite them with .mt extension
@@ -52,7 +53,7 @@ pub struct MailtempestConfig {
     pub imap_host: String,
     pub mail_dir: String,
     pub users_csv: String,
-    pub worker_nb: u8,
+    pub workers: usize,
     pub pace_seconds: f32,
     pub prepare: bool
 }
@@ -85,8 +86,8 @@ impl Args {
                 Some(users_csv) => users_csv,
                 None => "./users.csv".to_string()
             },
-            worker_nb: match self.worker_nb {
-                Some(worker_nb) => worker_nb, 
+            workers: match self.workers {
+                Some(workers) => workers,
                 None => 1 
             },
             pace_seconds: match self.pace_seconds {
@@ -101,7 +102,7 @@ impl Args {
     }
 }
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 17)]
+#[tokio::main]
 async fn main() {
     init_logs();
     let opt = Args::from_args();
@@ -111,18 +112,23 @@ async fn main() {
         prepare(mail_accounts, config.mail_dir);
         exit(0);
     }
-    info!("Running mailtempest with SMTP host={:?} and {:?} worker(s)", config.smtp_host, mail_accounts.len());
+
+    info!("Running mailtempest with SMTP host={}, {} users and {} worker(s)", config.smtp_host, mail_accounts.len(), config.workers);
+    let rt = runtime::Builder::new_multi_thread()
+        .worker_threads(config.workers)
+        .enable_io()
+        .enable_time()
+        .build().unwrap();
 
     let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
-
     let mut pace_maker = PaceMaker::new(sx.clone(), config.mail_dir, config.pace_seconds);
-    info!("Loaded {} emails", pace_maker.load_messages().unwrap());
+    pace_maker.load_messages().expect("cannot load messages");
 
     for mail_account in &mail_accounts {
         let mut mail_sender = MailSender::new(rx.clone(),
                                               config.smtp_host.clone(),
                                               mail_account.user.clone(), mail_account.password.clone()).await;
-        tokio::task::spawn(async move {
+        rt.spawn(async move {
             mail_sender.run_loop().await
         });
     }
@@ -130,7 +136,7 @@ async fn main() {
     if !config.imap_host.is_empty() {
         for mail_account in mail_accounts {
             let mut mail_reader = MailReader::new(config.imap_host.as_str());
-            tokio::task::spawn(async move {
+            rt.spawn(async move {
                 mail_reader.run_loop(&mail_account.user, &mail_account.password).await
             });
         }

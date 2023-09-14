@@ -27,11 +27,12 @@ impl <'a> PaceMaker<'a> {
             let message = Message::parse(contents.as_slice()).unwrap();
             self.messages.push(message.into_owned());
         }
+        info!("Loaded {} emails", self.messages.len());
         Ok(self.messages.len())
     }
 
     pub async fn run_loop(&self) {
-        info!("PaceSetter loop with pace {:?}s", self.pace_seconds);
+        info!("pacemaker loop with pace {:?}s", self.pace_seconds);
         loop {
             let between_0_1: f64 = random::<f64>();
             let wait_time_millis: u64 = (between_0_1 * f64::from(self.pace_seconds) * 2.0 * 1000.0).round() as u64;

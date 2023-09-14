@@ -27,9 +27,12 @@ FLAGS:
 
 OPTIONS:
         --mail-dir <mail-dir>            directory where the mails are going to be read. Default to './mails'
-        --pace-seconds <pace-seconds>    average pace of injection in second for pace setter. Default to 1s
+        --pace-seconds <pace-seconds>    average pace of injection in second for pace maker (float). Default to 1s
+        --prepare <prepare>              utility prepare command (boolean). It will use the CSV file to replace all the
+                                         email addresses in the files located in mail directory and rewrite them with
+                                         .mt extension
         --users-csv <users-csv>          CSV file where users login/password can be loaded. Defaults to users.csv
-        --worker-nb <worker-nb>          number of workers. Default to nb users
+        --workers <workers>              number of workers
 
 ARGS:
     <smtp-host>    host of the SMTP server
@@ -46,7 +49,7 @@ RUST_LOG=info mailtempest smtp.host imap.host
 
 It reads mail samples from a directory and randomly send them to the configured SMTP url. 
 
-It is multithreaded and will send mails concurrently with `worker_nb` threads (=number of mail users for now).
+It is multithreaded and will send mails concurrently with `workers` threads (=number of mail users for now).
 
 It sends them with an average of `worker_pace` seconds. It can be set to 0 to continuously send mails.
 
