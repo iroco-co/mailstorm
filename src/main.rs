@@ -29,19 +29,19 @@ struct Opt {
     smtp_host: String,
     /// host of the IMAP server.
     imap_host: Option<String>,
-    #[structopt(default_value = "./mail")]
+    #[structopt(long, default_value = "./mails")]
     /// directory where the mails are going to be read.
     mail_dir: String,
-    #[structopt(default_value = "./users.csv")]
+    #[structopt(long, default_value = "./users.csv")]
     /// CSV file where users login/password can be loaded.
     users_csv: String,
-    #[structopt(default_value = "1.0")]
+    #[structopt(long, default_value = "1.0")]
     /// average pace of injection in second for pace maker (float).
     pace_seconds: f32,
     #[structopt(long)]
     /// there is no random delay between messages. The delay is always pace_seconds.
     fixed_pace: bool,
-    #[structopt(default_value = "1")]
+    #[structopt(long, default_value = "1")]
     /// number of workers.
     workers: usize,
     #[structopt(long)]
