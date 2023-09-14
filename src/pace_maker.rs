@@ -24,9 +24,11 @@ impl <'a> PaceMaker<'a> {
         let paths = fs::read_dir(&self.mail_dir)?;
         for path in paths {
             let path = path.unwrap().path();
-            let contents = fs::read(path)?;
-            let message = Message::parse(contents.as_slice()).unwrap();
-            self.messages.push(message.into_owned());
+            if path.is_file() {
+                let contents = fs::read(path)?;
+                let message = Message::parse(contents.as_slice()).unwrap();
+                self.messages.push(message.into_owned());
+            }
         }
         info!("Loaded {} emails", self.messages.len());
         Ok(self.messages.len())
