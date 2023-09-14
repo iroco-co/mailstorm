@@ -10,12 +10,13 @@ pub struct PaceMaker<'a> {
     mail_dir: String,
     pace_seconds: f32,
     messages: Vec<Message<'a>>,
-    queue: Sender<Message<'a>>
+    queue: Sender<Message<'a>>,
+    fixed_pace: bool
 }
 
 impl <'a> PaceMaker<'a> {
-    pub fn new(queue: Sender<Message<'a>>, mail_dir: String, pace_seconds: f32) -> PaceMaker<'a> {
-        Self { queue, mail_dir, pace_seconds, messages: Vec::new()}
+    pub fn new(queue: Sender<Message<'a>>, mail_dir: String, pace_seconds: f32, fixed_pace: bool) -> PaceMaker<'a> {
+        Self { queue, mail_dir, pace_seconds, fixed_pace, messages: Vec::new()}
     }
 
     pub fn load_messages(&mut self) -> Result<usize, std::io::Error> {
@@ -32,11 +33,16 @@ impl <'a> PaceMaker<'a> {
     }
 
     pub async fn run_loop(&self) {
-        info!("pacemaker loop with pace {:?}s", self.pace_seconds);
+        info!("pacemaker loop with pace {}s fixed: {}", self.pace_seconds, self.fixed_pace);
         loop {
-            let between_0_1: f64 = random::<f64>();
-            let wait_time_millis: u64 = (between_0_1 * f64::from(self.pace_seconds) * 2.0 * 1000.0).round() as u64;
-            sleep(Duration::from_millis(wait_time_millis)).await;
+            let sleep_duration = if self.fixed_pace {
+                Duration::from_millis((self.pace_seconds * 1000.0).round() as u64)
+            } else {
+                let between_0_1: f64 = random::<f64>();
+                let random_millis: u64 = (between_0_1 * f64::from(self.pace_seconds) * 2.0 * 1000.0).round() as u64;
+                Duration::from_millis(random_millis)
+            };
+            sleep(sleep_duration).await;
             let msg = {
                 let mut rng = rand::thread_rng(); // rng should fall out of scope before async
                 self.messages.choose(&mut rng)

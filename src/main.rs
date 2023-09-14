@@ -39,6 +39,9 @@ struct Args {
     /// average pace of injection in second for pace maker (float). Default to 1s.
     pace_seconds: Option<f32>,
     #[structopt(long)]
+    /// fixed pace : there is no random delay between messages. The delay is always pace_seconds.
+    fixed_pace: Option<bool>,
+    #[structopt(long)]
     /// number of workers.
     workers: Option<usize>,
     #[structopt(long)]
@@ -55,6 +58,7 @@ pub struct MailtempestConfig {
     pub users_csv: String,
     pub workers: usize,
     pub pace_seconds: f32,
+    pub fixed_pace: bool,
     pub prepare: bool
 }
 
@@ -98,6 +102,10 @@ impl Args {
                 Some(prepare) => prepare,
                 None => false
             },
+            fixed_pace: match self.fixed_pace {
+                Some(fixed_pace) => fixed_pace,
+                None => false
+            },
         }
     }
 }
@@ -121,7 +129,7 @@ async fn main() {
         .build().unwrap();
 
     let (sx, rx): (Sender<Message>, Receiver<Message>) = unbounded();
-    let mut pace_maker = PaceMaker::new(sx.clone(), config.mail_dir, config.pace_seconds);
+    let mut pace_maker = PaceMaker::new(sx.clone(), config.mail_dir, config.pace_seconds, config.fixed_pace);
     pace_maker.load_messages().expect("cannot load messages");
 
     for mail_account in &mail_accounts {
