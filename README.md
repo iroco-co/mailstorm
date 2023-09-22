@@ -2,7 +2,7 @@
 
 > If we can’t face it, we can’t escape it  
 > But tonight the storm’s come  
-> -- Kate Tempest - Tunnel Vision
+> -- Kae Tempest - Tunnel Vision
 
 This is a mail injector based on tokio and [Stalwart Labs](https://github.com/stalwartlabs) mail libraries.
 
